@@ -395,11 +395,18 @@
 <script>
   document.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('a[data-cta]');
-    if (!a || typeof gtag !== 'function') return;
-    gtag('event', 'cta_click', {
-      cta_location: a.getAttribute('data-cta'),
-      link_url: a.href
-    });
+    if (!a) return;
+    if (typeof gtag !== 'function') return; // GA未読込なら通常遷移
+    var url = a.href;
+    var newTab = a.target === '_blank' || e.metaKey || e.ctrlKey || e.button === 1;
+    var params = { cta_location: a.getAttribute('data-cta'), link_url: url };
+    if (newTab) { gtag('event', 'cta_click', params); return; }
+    e.preventDefault();
+    var done = false;
+    var go = function () { if (!done) { done = true; window.location.href = url; } };
+    params.event_callback = go;
+    gtag('event', 'cta_click', params);
+    setTimeout(go, 1000); // 送信できなくても1秒後に必ず遷移
   });
 </script>
 </body>
